@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+updated on Jun. 9, 2022 by Hongfei Yan
+    maily add get_page(url) function
+
 update: 2020-08-25 21:33:27
 change: last_page = 64,  fix bug-->  tr td tag decode， add score and problem link columns
 Created on Tue Jan  3 10:29:52 2017
@@ -8,15 +11,43 @@ Created on Tue Jan  3 10:29:52 2017
 """
 
 import re
-import urllib.request
+#import urllib.request
 from bs4 import BeautifulSoup
 import os
 import csv
 import time
 
 
+import requests
+from requests.exceptions import RequestException
+
+
+def get_page(url):
+    try:
+        headers = {
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36',
+            'accept-language': 'en-US,en;q=0.9',
+            'cache-control': 'max-age=0',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'cookie': 'RCPC=f545fba99c66547075d0e5c03e8ad2e6; JSESSIONID=1EAFF194B52F87339FE470336F0852A3-n1; 39ce7=CFFwGWWZ; __utma=71512449.1890352982.1654744391.1654744391.1654744391.1; __utmc=71512449; __utmz=71512449.1654744391.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmt=1; __utmb=71512449.1.10.1654744391'
+            }
+        response = requests.get(url=url, headers=headers)
+        response.encoding = "utf-8"
+
+        if response.status_code == 200:
+            return response.text
+        return None
+    except RequestException:
+        return None
+
+
 def spider(url):
-    resp = urllib.request.urlopen(url)
+    #resp = urllib.request.urlopen(url)
+    resp = get_page(url)
+    if resp == None:
+        print("fail to get ", url)
+        return
+    
     soup = BeautifulSoup(resp, features='html.parser')
     ctx = soup.find_all("table", "problems")[0].find_all("tr")
     for row in ctx:
@@ -48,7 +79,7 @@ def spider(url):
 
 codeforces = {}
 wait = 5 # wait time to avoid the blocking of spider
-last_page = 64 # the total page number of problem set page
+last_page = 79 # the total page number of problem set page
 url = ['https://codeforces.com/problemset/page/%d' % page for page in range(1,last_page+1)]
 for foo in url:
     print('Processing URL %s' % foo)
@@ -58,8 +89,13 @@ for foo in url:
 
 #%% mark the accepted problems
 def accepted(url):
-    response = urllib.request.urlopen(url)
-    soup = BeautifulSoup(response.read())
+    #response = urllib.request.urlopen(url)
+    response = get_page(url)
+    if response == None:
+        print("fail to get ", url)
+        return
+    #soup = BeautifulSoup(response.read())
+    soup = BeautifulSoup(response)
     pattern = {'name':'table', 'class':'status-frame-datatable'}
     table = soup.findAll(**pattern)[0]
     pattern = {'name': 'tr'}
@@ -76,8 +112,8 @@ def accepted(url):
     return soup
 
 wait = 15 # wait time to avoid the blocking of spider
-last_page = 10 # the total page number of user submission
-handle = 'Greenwicher' # ⭐⭐输入你的cf用户名 please input your handle
+last_page = 14 # the total page number of user submission
+handle = 'GMyhf' # ⭐⭐输入你的cf用户名 please input your handle
 url = ['https://codeforces.com/submissions/%s/page/%d' % (handle, page) for page in range(1, last_page+1)]
 for foo in url:
     print('Processing URL %s' % foo)
